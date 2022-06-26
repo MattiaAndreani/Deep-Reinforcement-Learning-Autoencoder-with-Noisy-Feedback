@@ -142,3 +142,106 @@ if __name__ == '__main__':
             print('devA train rx...')
             HAr = devA.train_rx(devB, ch)
             RxA_loss.append(HAr.history['loss'])
+            
+# Plots for training losses
+
+import matplotlib.patches as mpatches
+
+# Files
+
+dirPath = os.getcwd()
+TxA = '/Loss' + '_' + 'TxA' + '_' + str(Epochs) + '_' + str(Batch_size) + '_' + str(noise_variance) + '_' + '.txt'
+Init = open(dirPath + '/results' + TxA, 'w')
+Init.close()
+with open(dirPath + '/results' + TxA, 'a') as DSTFile:
+  DSTFile.write(str(np.squeeze(TxA_loss)))
+
+dirPath = os.getcwd()
+TxB = '/Loss' + '_' + 'TxB' + '_' + str(Epochs) + '_' + str(Batch_size) + '_' + str(noise_variance) + '_' + '.txt'
+Init = open(dirPath + '/results' + TxB, 'w')
+Init.close()
+with open(dirPath + '/results' + TxB, 'a') as DSTFile:
+  DSTFile.write(str(np.squeeze(TxB_loss)))
+
+dirPath = os.getcwd()
+RxA = '/Loss' + '_' + 'RxA' + '_' + str(Epochs) + '_' + str(Batch_size) + '_' + str(noise_variance) + '_' + '.txt'
+Init = open(dirPath + '/results' + RxA, 'w')
+Init.close()
+with open(dirPath + '/results' + RxA, 'a') as DSTFile:
+  DSTFile.write(str(np.squeeze(RxA_loss)))
+
+dirPath = os.getcwd()
+RxB = '/Loss' + '_' + 'RxB' + '_' + str(Epochs) + '_' + str(Batch_size) + '_' + str(noise_variance) + '_' + '.txt'
+Init = open(dirPath + '/results' + RxB, 'w')
+Init.close()
+with open(dirPath + '/results' + RxB, 'a') as DSTFile:
+  DSTFile.write(str(np.squeeze(RxB_loss)))
+
+print(dirPath)
+
+# Common reference for x axis
+xl = np.arange(0,Epochs*Count) 
+
+# Figure 0: Device A Training Loss (Transmitter)
+plt.figure(0)
+plt.title('Device A Training Loss (Transmitter)')
+plt.xlabel('Epochs')
+plt.ylabel('Device A Tx Loss')
+plt.grid(True)
+plt.plot(xl,np.squeeze(TxA_loss), 'r-')
+
+# Figure 1: Device B Training Loss (Transmitter)
+plt.figure(1)
+plt.title('Device B Training Loss (Transmitter)')
+plt.xlabel('Epochs')
+plt.ylabel('Device B Tx Loss')
+plt.grid(True)
+plt.plot(xl,np.squeeze(TxB_loss), 'b-')
+
+# Figure 2: Device A Training Loss (Receiver)
+plt.figure(2)
+plt.title('Device A Training Loss (Receiver)')
+plt.xlabel('Epochs')
+plt.ylabel('Device A Rx Loss')
+plt.grid(True)
+plt.plot(xl,np.squeeze(RxA_loss), 'r-')
+
+# Figure 3: Device B Training Loss (Receiver)
+plt.figure(3)
+plt.title('Device B Training Loss (Receiver)')
+plt.xlabel('Epochs')
+plt.ylabel('Device B Rx Loss')
+plt.grid(True)
+plt.plot(xl,np.squeeze(RxB_loss), 'b-')
+
+# Now, let's make a prediction to evaluate the performances of our trained NN
+
+m = np.random.rand(Batch_size)
+x = np.squeeze(devA.transmitter.map(m))
+ch.x = x # Siamo sicuri che non ci vada la perturbazione?
+m_hat = devB.receiver.receive(ch.y)
+m_hat_squeezed = np.squeeze(m_hat)
+print(m_hat_squeezed)
+
+# Common reference for x axis
+x = np.arange(0, Batch_size)
+
+# Figure 4: True Messages vs Predicted Messages Scatterplot
+plt.figure(4)
+plt.title('True Messages vs Predicted Messages Scatterplot')
+plt.xlabel('Message No')
+plt.ylabel('True Messages / Predicted Messages')
+red_patch = mpatches.Patch(color='red', label='True Messages')
+green_patch = mpatches.Patch(color='green', label='Predicted Messages')
+plt.legend(handles=[red_patch, green_patch])
+plt.plot(x, m, 'ro')
+plt.plot(x, m_hat_squeezed, 'go')
+
+# Figure 5: Absolute Error Scatterplot
+plt.figure(5)
+plt.title('Figure 5: Absolute Error Scatterplot')
+plt.xlabel('Message No')
+plt.ylabel('Absolute Error')
+plt.plot(x,np.abs(m-m_hat_squeezed), 'bo')
+
+plt.show()
